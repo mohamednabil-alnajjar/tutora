@@ -1,6 +1,6 @@
 /* ذاكرلي service worker: cache-first app shell; AI API calls always go to the network. */
 
-const CACHE = 'tutora-v6';
+const CACHE = 'tutora-v7';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
