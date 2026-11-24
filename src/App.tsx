@@ -3,7 +3,6 @@ import {
     Callout, Caption, ChoiceRow, Closing, FileButton, FileCard, Group, Header,
     Link, NavLink, Route, Routes, TextField, useLocalState,
 } from './kit';
-import { units, totalQuestions } from './data/index';
 import type { Unit } from './data/types';
 import { askZekrly, createRecognizer, generateQuestions, generateTopicQuestions, playChime, speak, stopSpeaking, ttsSupported } from './ai';
 import logoUrl from './photos/logo.png';
@@ -84,13 +83,11 @@ function streakLabel(n: number): string {
 
 /* ---------- home ---------- */
 
-export const ROADMAP_TEXT = "عندك بنك أسئلة متبني من منهجك (الوحدات السبع كاملة)، وتقدر تحوّل أي ملاحظات لأسئلة من صفحة \"اختبر نفسك\"، وتسأل مساعد ذكي من \"اسأل Tutora\". وجاي بعد كده: بنك أسئلة امتحانات من المدرسين، أدوات للمدرسين (مخططات دروس وامتحانات)، شغل أوفلاين كامل، تسجيل دخول سهل، تصوير أي شرح أو صفحة وتحويلها لأسئلة وملخص، تسجيل المحاضرة وتفريغها نص مع امتحان منها، وضع \"اشرحلي الدرس من الأول\" لو مش فاهم حاجة، مساعد يفهم صور وصوت وملفات، ملخصات صوتية، غرف مذاكرة لايف بتحدي بين الأصحاب، وترتيب أسبوعي بينكم، قسم إعدادات فيه وضع ليلي وتحكم في الصوت، وتوليد ملفات ومشاريع كاملة بالذكاء الاصطناعي زي الأدوات الاحترافية، قاموس إنجليزي-عربي يشتغل بدون نت، تلخيص المنهج ومراجعة شاملة للم لمّه كله، تدريب على أسئلة الوزارة، مدرس صوتي بيتكلم مصري، تصوير أي سؤال بالكاميرا وحله خطوة بخطوة، شخصية بتكبر مع تقدمك وبتتعمل من صورتك، محاكاة يوم الامتحان الحقيقي، فلاش كاردز من أي درس، باتل لايف مع أصحابك، شرح بالرسم على سبورة، توليد صور تعليمية، خزنة مشفرة لكلمات السر، ذاكرة كاملة ماتنساش أي تفصيلة، تقرير أسبوعي بتقدمك، صور إنجازات تشاركها، اختبار تحديد مستوى، نسخ احتياطي لبياناتك، تطبيق أندرويد حقيقي (APK) وعلى متجر بلاي، لوحة تحكم ليك انت تدير بيها التطبيق، نموذج دعم فني وشكاوى، صفحة سياسة خصوصية كاملة، إشعارات بتنبهك بالمذاكرة، دعم قارئ الشاشة وتكبير الخط وسهولة الاستخدام لكل الطلبة، واجهة بكل اللغات، وبحث في الويب عن أي حاجة — وأي ميزات جماعية هتبقى خصوصية أولًا: اسم مستعار اختياري، إمكانية مجموعات للبنات بس، ومفيش تواصل خاص غير بموافقة الطرفين.";
+export const ROADMAP_TEXT = "تقدر تحوّل أي ملاحظات لأسئلة من صفحة \"اختبر نفسك\"، وتسأل مساعد ذكي من \"اسأل Tutora\". وجاي بعد كده: بنك أسئلة امتحانات من المدرسين، أدوات للمدرسين (مخططات دروس وامتحانات)، شغل أوفلاين كامل، تسجيل دخول سهل، تصوير أي شرح أو صفحة وتحويلها لأسئلة وملخص، تسجيل المحاضرة وتفريغها نص مع امتحان منها، وضع \"اشرحلي الدرس من الأول\" لو مش فاهم حاجة، مساعد يفهم صور وصوت وملفات، ملخصات صوتية، غرف مذاكرة لايف بتحدي بين الأصحاب، وترتيب أسبوعي بينكم، قسم إعدادات فيه وضع ليلي وتحكم في الصوت، وتوليد ملفات ومشاريع كاملة بالذكاء الاصطناعي زي الأدوات الاحترافية، قاموس إنجليزي-عربي يشتغل بدون نت، تلخيص المنهج ومراجعة شاملة للم لمّه كله، تدريب على أسئلة الوزارة، مدرس صوتي بيتكلم مصري، تصوير أي سؤال بالكاميرا وحله خطوة بخطوة، شخصية بتكبر مع تقدمك وبتتعمل من صورتك، محاكاة يوم الامتحان الحقيقي، فلاش كاردز من أي درس، باتل لايف مع أصحابك، شرح بالرسم على سبورة، توليد صور تعليمية، خزنة مشفرة لكلمات السر، ذاكرة كاملة ماتنساش أي تفصيلة، تقرير أسبوعي بتقدمك، صور إنجازات تشاركها، اختبار تحديد مستوى، نسخ احتياطي لبياناتك، تطبيق أندرويد حقيقي (APK) وعلى متجر بلاي، لوحة تحكم ليك انت تدير بيها التطبيق، نموذج دعم فني وشكاوى، صفحة سياسة خصوصية كاملة، إشعارات بتنبهك بالمذاكرة، دعم قارئ الشاشة وتكبير الخط وسهولة الاستخدام لكل الطلبة، واجهة بكل اللغات، وبحث في الويب عن أي حاجة — وأي ميزات جماعية هتبقى خصوصية أولًا: اسم مستعار اختياري، إمكانية مجموعات للبنات بس، ومفيش تواصل خاص غير بموافقة الطرفين.";
 
 function Home() {
-    const [scores] = useScores();
     const [streakData] = useStreak();
     const streakN = streakCount(streakData.days);
-    const attempted = units.filter(u => scores[u.id]).length;
     return <>
         <div className="zak-hero">
             <img src={logoUrl} alt="لوجو Tutora" className="zak-home-logo" />
@@ -102,46 +99,11 @@ function Home() {
                 <Link to="/ask" className="zak-action"><span className="zak-action-ic">💬</span><span>اسأل Tutora</span></Link>
                 <Link to="/planner" className="zak-action"><span className="zak-action-ic">🗓️</span><span>الخطة الذكية</span></Link>
             </div>
-            <Group label="منهجك" heading="وحدات البرمجة والذكاء الاصطناعي">
-                <div className="zak-grid">
-                    {units.map(u => {
-                        const s = scores[u.id];
-                        return <Link key={u.id} to="/quiz" className="zak-unit-card">
-                            <span className="zak-unit-icon" style={{ background: `${u.color}1f` }}>{u.icon}</span>
-                            <span className="zak-unit-body">
-                                <span className="zak-unit-name">{u.short}</span>
-                                <span className="zak-unit-meta"><bdi>{u.questions.length}</bdi> سؤال بشرح للإجابة</span>
-                            </span>
-                            {s && <span className="zak-unit-score">أحسن نتيجة <bdi>{s.best}%</bdi></span>}
-                        </Link>;
-                    })}
-                </div>
-            </Group>
-            <Caption>{attempted === 0 ? 'لسه مجربتش أي اختبار. ابدأ بأي وحدة.' : `جربت ${attempted} من 7 وحدات لحد دلوقتي.`}</Caption>
         </div>
     </>;
 }
 
 /* ---------- quiz ---------- */
-
-function QuizHub({ onStart }: { onStart: (u: Unit) => void }) {
-    const [scores] = useScores();
-    return <Group label="اختار الوحدة" heading="اختبر نفسك">
-        <div className="zak-grid">
-            {units.map(u => {
-                const s = scores[u.id];
-                return <button key={u.id} type="button" className="zak-unit-card" onClick={() => onStart(u)}>
-                    <span className="zak-unit-icon" style={{ background: `${u.color}1f` }}>{u.icon}</span>
-                    <span className="zak-unit-body">
-                        <span className="zak-unit-name">{u.title}</span>
-                        <span className="zak-unit-meta"><bdi>{u.questions.length}</bdi> سؤال · إجابة فورية مع الشرح</span>
-                    </span>
-                    {s && <span className="zak-unit-score">أحسن نتيجة <bdi>{s.best}%</bdi></span>}
-                </button>;
-            })}
-        </div>
-    </Group>;
-}
 
 function QuizRun({ unit, onExit }: { unit: Unit; onExit: () => void }) {
     const [order] = useState(() => shuffle(unit.questions.map((_, i) => i)));
@@ -437,7 +399,6 @@ function Quiz() {
     if (!selected) return <>
         <TopicGen onStart={setSelected} />
         <AIGen onStart={setSelected} />
-        <QuizHub onStart={setSelected} />
     </>;
     return <QuizRun key={selected.id} unit={selected} onExit={() => setSelected(null)} />;
 }
@@ -671,7 +632,7 @@ export function App() {
         <Splash />
         <Header
             title="Tutora"
-            fact={`${totalQuestions} سؤال من المنهج`}
+            fact="مساعدك الذكي في كل المواد"
         />
         <nav className="zak-nav" aria-label="أقسام Tutora">
             <NavLink to="/" end><span className="zak-tab-ic">🏠</span><span>الرئيسية</span></NavLink>
@@ -687,6 +648,6 @@ export function App() {
             <Route path="/planner" element={<Planner />} />
                     <Route path="/settings" element={<Settings />} />
         </Routes>
-        <Closing>Tutora نسخة تانية بالذكاء الاصطناعي: بنك أسئلة من منهج البرمجة والذكاء الاصطناعي للصف الثاني البكالوريا + توليد أسئلة من ملاحظاتك + مساعد بصوتك. نتايجك وجدولك بيتخزنوا على جهازك بس. صنع بواسطة <bdi>Mohamed Nabil Al-Najjar</bdi>.</Closing>
+        <Closing>Tutora مساعدك الذكي في كل المواد: اسأل أي حاجة، واختبر نفسك في أي موضوع بلا حدود. نتايجك وجدولك بيتخزنوا على جهازك بس. صنع بواسطة <bdi>Mohamed Nabil Al-Najjar</bdi>.</Closing>
     </FileCard>;
 }
