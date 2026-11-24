@@ -571,7 +571,7 @@ function Splash() {
     const [show, setShow] = useState(true);
     const [muted, setMuted] = useLocalState<boolean>('zakarely.mute.v1', false);
     useEffect(() => {
-        if (!muted) playChime();
+        if (!muted) { try { playChime(); } catch { /* متصفح قديم بلا صوت */ } }
         const t = setTimeout(() => setShow(false), 2400);
         return () => clearTimeout(t);
     }, []);
