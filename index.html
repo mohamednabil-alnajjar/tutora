@@ -13,6 +13,19 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Tutora" />
+    <script>
+      window.__bootErr = '';
+      window.addEventListener('error', function (e) { window.__bootErr = String(e.message || 'error'); });
+      setTimeout(function () {
+        var root = document.getElementById('root');
+        if (root && root.children.length === 0) {
+          var d = document.createElement('div');
+          d.style.cssText = 'padding:60px 24px;text-align:center;font-family:sans-serif;direction:rtl;color:#1d2b27';
+          d.innerHTML = '<h2 style="color:#3f6f63">Tutora</h2><p>المتصفح ده قديم على التطبيق. جرّب تفتح اللينك من متصفح كروم محدّث أو سامسونج انترنت.</p><p style="color:#98a8a1;font-size:11px;direction:ltr;word-break:break-all">' + window.__bootErr + '</p>';
+          document.body.appendChild(d);
+        }
+      }, 6000);
+    </script>
   </head>
   <body>
     <div id="root"></div>
