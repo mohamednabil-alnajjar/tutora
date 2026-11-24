@@ -44,11 +44,7 @@ const QUIZ_SYSTEM = `أنت مساعد بتولد أسئلة اختيار من �
 {"questions":[{"q":"نص السؤال","choices":["اختيار 1","اختيار 2","اختيار 3","اختيار 4"],"answer":0,"explain":"شرح قصير ليه دي الإجابة الصح"}]}
 القواعد: 4 اختيارات لكل سؤال، answer رقم الاختيار الصح من 0 لـ 3، الأسئلة من الملاحظات نفسها بس، واختبر الفهم مش الحفظ بس.`;
 
-export async function generateQuestions(notes: string, count: number): Promise<Question[]> {
-    const text = await callAI([
-        { role: 'system', content: QUIZ_SYSTEM },
-        { role: 'user', content: `حوّل الملاحظات دي لـ ${count} أسئلة اختيار من متعدد:\n\n${notes}` },
-    ], true);
+function parseQuestionsJson(text: string): Question[] {
     let parsed: unknown;
     try {
         parsed = JSON.parse(extractJson(text));
@@ -69,7 +65,7 @@ export async function generateQuestions(notes: string, count: number): Promise<Q
                 q: q.q.trim().replace(/^(س\d+|سؤال)\s*[:\-ـ.]\s*/, ''),
                 choices: (q.choices as string[]).map(c => c.trim().replace(/^(أ|ب|جـ|ج|د|[A-Da-d]|[0-9١-٤]+)\s*[\.、\)\:\-ـ]\s*/, '')),
                 answer: q.answer,
-                explain: typeof q.explain === 'string' && q.explain.trim() ? q.explain.trim() : 'راجع الملاحظات بتاعتك.',
+                explain: typeof q.explain === 'string' && q.explain.trim() ? q.explain.trim() : 'راجع الدرس أو اسأل المساعد عنها.',
             });
         }
     }
@@ -77,7 +73,27 @@ export async function generateQuestions(notes: string, count: number): Promise<Q
     return questions;
 }
 
-const ASK_SYSTEM = `أنت "ذاكرلي"، مساعد مذاكرة ودود لطالب مصري في تانية باكالوريا بيدرس برمجة وذكاء اصطناعي. جاوب بالعربية المصري البسيط، في ٣-٤ جمل بس، من غير تنسيقات ولا نقط، عشان الإجابة ممكن تتقال بصوت عالي. لو السؤال عن المنهج اشرح ببساطة، ولو سؤال عام جاوب بشكل مفيد.`;
+export async function generateQuestions(notes: string, count: number): Promise<Question[]> {
+    const text = await callAI([
+        { role: 'system', content: QUIZ_SYSTEM },
+        { role: 'user', content: `حوّل الملاحظات دي لـ ${count} أسئلة اختيار من متعدد:\n\n${notes}` },
+    ], true);
+    return parseQuestionsJson(text);
+}
+
+const TOPIC_SYSTEM = `أنت مساعد بتولد أسئلة اختيار من متعدد في أي مادة أو موضوع لطالب مصري في تانية باكالوريا. اكتب بالعربي الفصيح البسيط. رد بـ JSON صالح فقط بدون أي كلام زيادة، بالشكل ده بالظبط:
+{"questions":[{"q":"نص السؤال","choices":["اختيار 1","اختيار 2","اختيار 3","اختيار 4"],"answer":0,"explain":"شرح قصير ليه دي الإجابة الصح"}]}
+القواعد: 4 اختيارات لكل سؤال، answer رقم الاختيار الصح من 0 لـ 3، الأسئلة عن الموضوع المطلوب بالظبط وبمستوى طالب ثانوي، واختبر الفهم مش الحفظ بس.`;
+
+export async function generateTopicQuestions(topic: string, count: number): Promise<Question[]> {
+    const text = await callAI([
+        { role: 'system', content: TOPIC_SYSTEM },
+        { role: 'user', content: `اكتب ${count} أسئلة اختيار من متعدد عن: ${topic}` },
+    ], true);
+    return parseQuestionsJson(text);
+}
+
+const ASK_SYSTEM = `أنت "Tutora"، مساعد ذكي ودود لطالب مصري في تانية باكالوريا. جاوب بالعربية المصري البسيط، في ٣-٤ جمل بس، من غير تنسيقات ولا نقط، عشان الإجابة ممكن تتقال بصوت عالي. جاوب على أي سؤال في أي موضوع بشكل مفيد وصادق، ولو السؤال في المنهج اشرح ببساطة من الأول.`;
 
 export async function askZekrly(history: ChatMessage[]): Promise<string> {
     const text = await callAI([{ role: 'system', content: ASK_SYSTEM }, ...history.slice(-10)], false, 60000);

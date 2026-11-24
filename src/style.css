@@ -644,3 +644,161 @@
     font-size: 18px;
     cursor: pointer;
 }
+
+/* شريط أقسام سفلي ثابت زي واتساب: أيقونة + اسم لكل قسم */
+
+body {
+    padding-bottom: 84px;
+}
+
+.zak-nav {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    margin: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: var(--ds-raised);
+    border-top: 1px solid var(--ds-hairline);
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+}
+
+.zak-nav a {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    font-size: 11px;
+    text-align: center;
+}
+
+.zak-nav a .zak-tab-ic {
+    font-size: 19px;
+    line-height: 1;
+}
+
+.zak-nav a.active {
+    background: transparent;
+    color: var(--ds-teal);
+}
+
+/* شكل تطبيق حقيقي: صفوف قوائم زي واتساب + اختصارات */
+
+.zak-hero {
+    align-items: stretch;
+    text-align: right;
+    gap: 12px;
+    border: none;
+    background: transparent;
+    padding: 4px 0 0;
+}
+
+.zak-home-logo {
+    width: 64px;
+    height: 64px;
+    align-self: center;
+}
+
+.zak-hero-hi {
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.zak-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.zak-action {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 4px;
+    border: 1px solid var(--ds-hairline);
+    border-radius: 14px;
+    background: var(--ds-raised);
+    color: var(--ds-ink);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.zak-action-ic {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.zak-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.zak-unit-card {
+    border: none;
+    border-bottom: 1px solid var(--ds-hairline);
+    border-radius: 0;
+    background: transparent;
+    padding: 12px 2px;
+}
+
+.zak-unit-card:last-child {
+    border-bottom: none;
+}
+
+.zak-unit-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 20px;
+}
+
+.zak-unit-name {
+    font-size: 15px;
+}
+
+.zak-unit-meta {
+    font-size: 12px;
+}
+
+.zak-roadmap {
+    border: 1px solid var(--ds-hairline);
+    border-radius: 14px;
+    background: var(--ds-raised);
+    padding: 10px 12px;
+}
+
+.zak-roadmap summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ds-teal);
+    list-style: none;
+}
+
+.zak-roadmap summary::-webkit-details-marker {
+    display: none;
+}
+
+.zak-roadmap summary::after {
+    content: ' ▾';
+}
+
+.zak-roadmap[open] summary::after {
+    content: ' ▴';
+}
+
+.zak-roadmap .k-callout,
+.zak-roadmap .ds-callout {
+    margin-top: 10px;
+}

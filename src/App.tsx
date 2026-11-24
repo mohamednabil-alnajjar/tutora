@@ -5,7 +5,7 @@ import {
 } from './kit';
 import { units, totalQuestions } from './data/index';
 import type { Unit } from './data/types';
-import { askZekrly, createRecognizer, generateQuestions, playChime, speak, stopSpeaking, ttsSupported } from './ai';
+import { askZekrly, createRecognizer, generateQuestions, generateTopicQuestions, playChime, speak, stopSpeaking, ttsSupported } from './ai';
 import logoUrl from './photos/logo.png';
 
 /* ---------- shared helpers ---------- */
@@ -84,6 +84,8 @@ function streakLabel(n: number): string {
 
 /* ---------- home ---------- */
 
+export const ROADMAP_TEXT = "عندك بنك أسئلة متبني من منهجك (الوحدات السبع كاملة)، وتقدر تحوّل أي ملاحظات لأسئلة من صفحة \"اختبر نفسك\"، وتسأل مساعد ذكي من \"اسأل Tutora\". وجاي بعد كده: بنك أسئلة امتحانات من المدرسين، أدوات للمدرسين (مخططات دروس وامتحانات)، شغل أوفلاين كامل، تسجيل دخول سهل، تصوير أي شرح أو صفحة وتحويلها لأسئلة وملخص، تسجيل المحاضرة وتفريغها نص مع امتحان منها، وضع \"اشرحلي الدرس من الأول\" لو مش فاهم حاجة، مساعد يفهم صور وصوت وملفات، ملخصات صوتية، غرف مذاكرة لايف بتحدي بين الأصحاب، وترتيب أسبوعي بينكم، قسم إعدادات فيه وضع ليلي وتحكم في الصوت، وتوليد ملفات ومشاريع كاملة بالذكاء الاصطناعي زي الأدوات الاحترافية، قاموس إنجليزي-عربي يشتغل بدون نت، تلخيص المنهج ومراجعة شاملة للم لمّه كله، تدريب على أسئلة الوزارة، مدرس صوتي بيتكلم مصري، تصوير أي سؤال بالكاميرا وحله خطوة بخطوة، شخصية بتكبر مع تقدمك وبتتعمل من صورتك، محاكاة يوم الامتحان الحقيقي، فلاش كاردز من أي درس، باتل لايف مع أصحابك، شرح بالرسم على سبورة، توليد صور تعليمية، خزنة مشفرة لكلمات السر، ذاكرة كاملة ماتنساش أي تفصيلة، تقرير أسبوعي بتقدمك، صور إنجازات تشاركها، اختبار تحديد مستوى، نسخ احتياطي لبياناتك، تطبيق أندرويد حقيقي (APK) وعلى متجر بلاي، لوحة تحكم ليك انت تدير بيها التطبيق، نموذج دعم فني وشكاوى، صفحة سياسة خصوصية كاملة، إشعارات بتنبهك بالمذاكرة، واجهة بكل اللغات، وبحث في الويب عن أي حاجة — وأي ميزات جماعية هتبقى خصوصية أولًا: اسم مستعار اختياري، إمكانية مجموعات للبنات بس، ومفيش تواصل خاص غير بموافقة الطرفين.";
+
 function Home() {
     const [scores] = useScores();
     const [streakData] = useStreak();
@@ -91,11 +93,16 @@ function Home() {
     const attempted = units.filter(u => scores[u.id]).length;
     return <>
         <div className="zak-hero">
-            <span className="zak-hero-badge">برمجة وذكاء اصطناعي · تانية باكالوريا</span>
             <img src={logoUrl} alt="لوجو Tutora" className="zak-home-logo" />
+            <span className="zak-hero-hi">أهلًا بيك 👋</span>
             <span className="zak-maker">صنع بواسطة <bdi>Mohamed Nabil Al-Najjar</bdi> 🛠️</span>
             {streakN > 0 && <span className="zak-streak">🔥 سلسلة مذاكرتك: {streakLabel(streakN)} متتالية</span>}
-            <Group label="إيه اللي جوه Tutora؟" heading="اختبر نفسك وخطط مذاكرتك في مكان واحد">
+            <div className="zak-actions">
+                <Link to="/quiz" className="zak-action"><span className="zak-action-ic">📝</span><span>اختبر نفسك</span></Link>
+                <Link to="/ask" className="zak-action"><span className="zak-action-ic">💬</span><span>اسأل Tutora</span></Link>
+                <Link to="/planner" className="zak-action"><span className="zak-action-ic">🗓️</span><span>الخطة الذكية</span></Link>
+            </div>
+            <Group label="منهجك" heading="وحدات البرمجة والذكاء الاصطناعي">
                 <div className="zak-grid">
                     {units.map(u => {
                         const s = scores[u.id];
@@ -110,20 +117,6 @@ function Home() {
                     })}
                 </div>
             </Group>
-            <Group label="خطط مذاكرتك" heading="الخطة الذكية">
-                <div className="zak-grid">
-                    <Link to="/planner" className="zak-unit-card">
-                        <span className="zak-unit-icon" style={{ background: '#73a89a1f' }}>🗓️</span>
-                        <span className="zak-unit-body">
-                            <span className="zak-unit-name">خطة المذاكرة اليومية</span>
-                            <span className="zak-unit-meta">دخل موادك ومواعيد امتحاناتك، وTutora يقسمهوملك على الأيام بمراجعة متباعدة</span>
-                        </span>
-                    </Link>
-                </div>
-            </Group>
-            <Callout title="الأسئلة جاهزة من المنهج + توليد بالذكاء الاصطناعي" tone="note">
-                عندك بنك أسئلة متبني من منهجك (الوحدات السبع كاملة)، وتقدر تحوّل أي ملاحظات لأسئلة من صفحة "اختبر نفسك"، وتسأل مساعد ذكي من "اسأل Tutora". وجاي بعد كده: بنك أسئلة امتحانات من المدرسين، أدوات للمدرسين (مخططات دروس وامتحانات)، شغل أوفلاين كامل، تسجيل دخول سهل، تصوير أي شرح أو صفحة وتحويلها لأسئلة وملخص، تسجيل المحاضرة وتفريغها نص مع امتحان منها، وضع "اشرحلي الدرس من الأول" لو مش فاهم حاجة، مساعد يفهم صور وصوت وملفات، ملخصات صوتية، غرف مذاكرة لايف بتحدي بين الأصحاب، وترتيب أسبوعي بينكم، قسم إعدادات فيه وضع ليلي وتحكم في الصوت، وتوليد ملفات ومشاريع كاملة بالذكاء الاصطناعي زي الأدوات الاحترافية — وأي ميزات جماعية هتبقى خصوصية أولًا: اسم مستعار اختياري، إمكانية مجموعات للبنات بس، ومفيش تواصل خاص غير بموافقة الطرفين.
-            </Callout>
             <Caption>{attempted === 0 ? 'لسه مجربتش أي اختبار. ابدأ بأي وحدة.' : `جربت ${attempted} من 7 وحدات لحد دلوقتي.`}</Caption>
         </div>
     </>;
@@ -299,6 +292,62 @@ function AIGen({ onStart }: { onStart: (u: Unit) => void }) {
     </Group>;
 }
 
+
+/* ---------- أسئلة في أي مادة ---------- */
+
+function TopicGen({ onStart }: { onStart: (u: Unit) => void }) {
+    const [topic, setTopic] = useState('');
+    const [count, setCount] = useState<'5' | '10'>('5');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    const canGenerate = topic.trim().length >= 3 && !busy;
+
+    const generate = async () => {
+        if (!canGenerate) return;
+        setBusy(true);
+        setError('');
+        try {
+            const questions = await generateTopicQuestions(topic.trim(), Number(count));
+            onStart({
+                id: `topic-${Date.now()}`,
+                title: topic.trim(),
+                short: 'أي مادة 🌍',
+                icon: '🌍',
+                color: '#3f6f63',
+                questions,
+            });
+            setTopic('');
+        } catch {
+            setError('مقدرناش نولد الأسئلة دلوقتي. ممكن الخدمة تكون زحمة، جرب تاني بعد شوية.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return <Group label="بلا حدود 🌍" heading="أسئلة في أي مادة أو موضوع">
+        <div className="zak-form">
+            <TextField
+                label="المادة أو الموضوع"
+                value={topic}
+                onChange={setTopic}
+                placeholder="مثال: نحو - المفعول به، فيزياء - التيار الكهربي، تاريخ مصر الحديث..."
+            />
+            <ChoiceRow
+                label="عدد الأسئلة"
+                options={[{ value: '5', label: '5 أسئلة' }, { value: '10', label: '10 أسئلة' }]}
+                value={count}
+                onChange={(v: string) => setCount(v as '5' | '10')}
+            />
+            <FileButton onClick={generate} disabled={!canGenerate}>
+                {busy ? 'بنكتب أسئلتك… ممكن تاخد دقيقة ⏳' : 'ولد الأسئلة 🌍'}
+            </FileButton>
+            {error !== '' && <Caption>{error}</Caption>}
+            <Caption>الذكاء الاصطناعي بيكتب أسئلة جديدة كل مرة في أي مادة تطلبها، من غير حد أقصى. راجع الإجابات مع كتبك، ممكن يغلط أحيانًا.</Caption>
+        </div>
+    </Group>;
+}
+
 /* ---------- AI voice assistant ---------- */
 
 interface ChatMsg { role: 'user' | 'assistant'; text: string }
@@ -386,6 +435,7 @@ function Ask() {
 function Quiz() {
     const [selected, setSelected] = useState<Unit | null>(null);
     if (!selected) return <>
+        <TopicGen onStart={setSelected} />
         <AIGen onStart={setSelected} />
         <QuizHub onStart={setSelected} />
     </>;
@@ -543,35 +593,57 @@ function Planner() {
 function Settings() {
     const [muted, setMuted] = useLocalState<boolean>('zakarely.mute.v1', false);
     const [theme, setTheme] = useLocalState<string>('zakarely.theme.v1', 'light');
+    const [mic, setMic] = useState('...');
     useEffect(() => {
         document.documentElement.dataset.theme = theme;
     }, [theme]);
-    return <Group label="الإعدادات" heading="تحكم في Tutora">
-        <ChoiceRow
-            label="المظهر"
-            options={[{ value: 'light', label: '☀️ فاتح' }, { value: 'dark', label: '🌙 ليلي' }]}
-            value={theme}
-            onChange={setTheme}
-        />
-        <ChoiceRow
-            label="الصوت (نغمة الافتتاح وصوت المساعد)"
-            options={[{ value: 'on', label: '🔊 شغال' }, { value: 'off', label: '🔇 ميوت' }]}
-            value={muted ? 'off' : 'on'}
-            onChange={(v: string) => setMuted(v === 'off')}
-        />
-        <Caption>الإشعارات: لسه جاية في تحديث قريب، هتفكرك بمواعيد المذاكرة والمراجعات.</Caption>
-        <Callout title="الحساب" tone="note">
-            بياناتك (نتايجك وجدولك وإعداداتك) متخزنة على جهازك بس، مفيش حسابات ولا تسجيل دخول لسه.
-        </Callout>
-        <Caption>Tutora — من تطوير محمد نبيل النجار (Mohamed Nabil Al-Najjar)</Caption>
-    </Group>;
+    useEffect(() => {
+        try {
+            const nav = navigator as unknown as { permissions?: { query: (d: { name: string }) => Promise<{ state: string }> } };
+            if (!nav.permissions) { setMic('هيتطلب إذنك أول ما تستخدمه'); return; }
+            nav.permissions.query({ name: 'microphone' })
+                .then(r => setMic(r.state === 'granted' ? 'متاح ✓' : r.state === 'denied' ? 'مرفوض — تقدر تسمح بيه من إعدادات المتصفح' : 'هيتطلب إذنك أول ما تستخدمه'))
+                .catch(() => setMic('هيتطلب إذنك أول ما تستخدمه'));
+        } catch {
+            setMic('هيتطلب إذنك أول ما تستخدمه');
+        }
+    }, []);
+    return <>
+        <Group label="الإعدادات" heading="تحكم في Tutora">
+            <ChoiceRow
+                label="المظهر"
+                options={[{ value: 'light', label: '☀️ فاتح' }, { value: 'dark', label: '🌙 ليلي' }]}
+                value={theme}
+                onChange={setTheme}
+            />
+            <ChoiceRow
+                label="الصوت (نغمة الافتتاح وصوت المساعد)"
+                options={[{ value: 'on', label: '🔊 شغال' }, { value: 'off', label: '🔇 ميوت' }]}
+                value={muted ? 'off' : 'on'}
+                onChange={(v: string) => setMuted(v === 'off')}
+            />
+        </Group>
+        <Group label="الصلاحيات والخصوصية" heading="بياناتك ملكك">
+            <Callout title="الصلاحيات" tone="note">
+                المايكروفون: {mic}. أي صلاحية تقدر تلغيها في أي وقت من إعدادات المتصفح، وانت المتحكم دايمًا.
+            </Callout>
+            <Callout title="الخصوصية أولًا" tone="note">
+                كل بياناتك (نتايجك وجدولك وإعداداتك) متخزنة على جهازك بس، مفيش حسابات ولا تتبع ولا بيع بيانات. نص سؤالك أو ملاحظاتك بس هو اللي بيتبعت لخدمة الذكاء الاصطناعي وقت الاستخدام عشان الرد.
+            </Callout>
+            <details className="zak-roadmap">
+                <summary>🗺️ خارطة الطريق: كل اللي جاي في Tutora</summary>
+                <Caption>{ROADMAP_TEXT}</Caption>
+            </details>
+            <Caption>Tutora — من تطوير محمد نبيل النجار (Mohamed Nabil Al-Najjar)</Caption>
+        </Group>
+    </>;
 }
 
 function Splash() {
     const [show, setShow] = useState(true);
     const [muted, setMuted] = useLocalState<boolean>('zakarely.mute.v1', false);
     useEffect(() => {
-        if (!muted) { try { playChime(); } catch { /* متصفح قديم بلا صوت */ } }
+        if (!muted) playChime();
         const t = setTimeout(() => setShow(false), 2400);
         return () => clearTimeout(t);
     }, []);
@@ -600,14 +672,13 @@ export function App() {
         <Header
             title="Tutora"
             fact={`${totalQuestions} سؤال من المنهج`}
-            intro="رفيقك في المذاكرة: اختبر نفسك في وحدات البرمجة والذكاء الاصطناعي، حوّل ملاحظاتك لأسئلة بالذكاء الاصطناعي، اسأل مساعد ذكي بصوتك أو بالكتابة، وخطط مذاكرتك بجدول يومي."
         />
         <nav className="zak-nav" aria-label="أقسام Tutora">
-            <NavLink to="/" end>الرئيسية</NavLink>
-            <NavLink to="/quiz">اختبر نفسك</NavLink>
-            <NavLink to="/ask">اسأل Tutora</NavLink>
-            <NavLink to="/planner">الخطة الذكية</NavLink>
-            <NavLink to="/settings">الإعدادات</NavLink>
+            <NavLink to="/" end><span className="zak-tab-ic">🏠</span><span>الرئيسية</span></NavLink>
+            <NavLink to="/quiz"><span className="zak-tab-ic">📝</span><span>اختبر نفسك</span></NavLink>
+            <NavLink to="/ask"><span className="zak-tab-ic">💬</span><span>اسأل Tutora</span></NavLink>
+            <NavLink to="/planner"><span className="zak-tab-ic">🗓️</span><span>الخطة الذكية</span></NavLink>
+            <NavLink to="/settings"><span className="zak-tab-ic">⚙️</span><span>الإعدادات</span></NavLink>
         </nav>
         <Routes>
             <Route path="/" element={<Home />} />
