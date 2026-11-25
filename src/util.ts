@@ -144,6 +144,11 @@ let newChatFlag = false;
 export function startNewChat(): void { newChatFlag = true; }
 export function consumeNewChatFlag(): boolean { const f = newChatFlag; newChatFlag = false; return f; }
 
+/* طلب فتح محادثة محفوظة في صفحة المساعد (بدون ? في الرابط عشان الراوتر) */
+let pendingChatId = '';
+export function setPendingChat(id: string): void { pendingChatId = id; }
+export function consumePendingChat(): string { const c = pendingChatId; pendingChatId = ''; return c; }
+
 /* ---------- التنقل ---------- */
 
 export function goTo(path: string): void {

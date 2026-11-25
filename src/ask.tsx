@@ -10,7 +10,7 @@ import { Icon } from './icons';
 import { fmt, t } from './i18n';
 import { OrbView } from './orb3d';
 import type { OrbState } from './orb3d';
-import { consumeNewChatFlag, consumePendingAsk, goTo, setPendingTopic, useChatSessions } from './util';
+import { consumeNewChatFlag, consumePendingAsk, consumePendingChat, goTo, setPendingTopic, useChatSessions } from './util';
 import type { ChatMsgT } from './util';
 
 export function Ask({ onMenu }: { onMenu: () => void }) {
@@ -51,21 +51,17 @@ export function Ask({ onMenu }: { onMenu: () => void }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [msgs, chatId]);
 
-    /* فتح محادثة محفوظة من القايمة الجانبية (?c=ID) أو محادثة جديدة */
+    /* فتح محادثة محفوظة من القايمة الجانبية */
     useEffect(() => {
-        try {
-            const hash = window.location.hash;
-            const m = hash.match(/[?&]c=([^&]+)/);
-            if (m) {
-                const found = chats.find(c => c.id === m[1]);
-                if (found) {
-                    setChatId(found.id);
-                    setMsgs(found.msgs);
-                }
-            }
-        } catch { /* ignore */ }
+        const id = consumePendingChat();
+        if (!id) return;
+        const found = chats.find(c => c.id === id);
+        if (found) {
+            setChatId(found.id);
+            setMsgs(found.msgs);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    });
 
     useEffect(() => {
         if (consumeNewChatFlag()) {

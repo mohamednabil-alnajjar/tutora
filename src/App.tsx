@@ -86,7 +86,7 @@ export function App() {
         )}
         {splashDone && !needsOnboarding && <>
             <Routes>
-                <Route path="/" element={<Home onMenu={() => setDrawerOpen(true)} />} />
+                <Route path="/" element={<Home onMenu={() => setDrawerOpen(true)} theme={theme} setTheme={setTheme} />} />
                 <Route path="/quiz" element={<Quiz />} />
                 <Route path="/ask" element={<Ask onMenu={() => setDrawerOpen(true)} />} />
                 <Route path="/planner" element={<Planner />} />

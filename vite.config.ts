@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 
 // دعم أقصى للمتصفحات القديمة (موبايلات قديمة و WebView جوه التطبيقات)
 export default defineConfig({
+  base: './',
   build: {
     target: 'es2015',
     cssTarget: 'chrome61',

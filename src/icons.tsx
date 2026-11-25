@@ -7,7 +7,7 @@ export type IconName =
     | 'send' | 'wave' | 'plus' | 'file' | 'spark' | 'globe' | 'flame' | 'sun'
     | 'moon' | 'check' | 'trash' | 'user' | 'x' | 'menu' | 'edit' | 'search'
     | 'book' | 'briefcase' | 'code' | 'divide' | 'flask' | 'palette' | 'clock'
-    | 'think' | 'volume' | 'chevDown' | 'image';
+    | 'think' | 'volume' | 'chevDown' | 'image' | 'chevL';
 
 const PATHS: Record<IconName, React.ReactNode> = {
     home: <><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" /></>,
@@ -44,6 +44,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
     think: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.8a2.5 2.5 0 1 1 3.4 2.3c-.7.3-.9.8-.9 1.4v.5" /><path d="M12 17h.01" /></>,
     volume: <><path d="M11 5 6.5 8.5H3v7h3.5L11 19z" /><path d="M15 9a4.5 4.5 0 0 1 0 6" /><path d="M17.5 6.5a8 8 0 0 1 0 11" /></>,
     chevDown: <path d="m6 9 6 6 6-6" />,
+    chevL: <path d="m15 6-6 6 6 6" />,
     image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m4.5 18 5-5 3.5 3.5 3-3L20.5 18" /></>,
 };
 

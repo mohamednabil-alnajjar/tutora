@@ -21,7 +21,7 @@ function greetingKey(): string {
     return 'home.night';
 }
 
-export function Home({ onMenu }: { onMenu: () => void }) {
+export function Home({ onMenu, theme, setTheme }: { onMenu: () => void; theme: string; setTheme: (t: string) => void }) {
     const [account] = useAccount();
     const [streakData] = useStreak();
     const [interests] = useInterests();
@@ -71,11 +71,16 @@ export function Home({ onMenu }: { onMenu: () => void }) {
     return <>
         <div className="nv-topbar">
             <button type="button" className="nv-iconbtn" aria-label={t('nav.label')} onClick={onMenu}><Icon name="menu" size={20} /></button>
-            <span className="nv-wordmark">NOVA</span>
-            <button type="button" className="nv-iconbtn nv-bell" aria-label={t('home.notifs')} onClick={() => setShowNotifs(!showNotifs)}>
-                <Icon name="bell" size={20} />
-                {notices.length > 0 && <span className="nv-bell-dot">{notices.length}</span>}
-            </button>
+            <span className="nv-wordmark">NOVA<span className="nv-wordmark-dot" aria-hidden="true">●</span></span>
+            <div className="nv-top-actions">
+                <button type="button" className="nv-iconbtn" aria-label={t('st.theme')} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                    <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />
+                </button>
+                <button type="button" className="nv-iconbtn nv-bell" aria-label={t('home.notifs')} onClick={() => setShowNotifs(!showNotifs)}>
+                    <Icon name="bell" size={20} />
+                    {notices.length > 0 && <span className="nv-bell-dot">{notices.length}</span>}
+                </button>
+            </div>
         </div>
 
         {showNotifs && <div className="nv-notif-panel" role="status">
@@ -95,10 +100,10 @@ export function Home({ onMenu }: { onMenu: () => void }) {
             </Link>
             <span className="nv-hero-hi">{fmt('home.hiName', { g: t(greetingKey()), n: name })}</span>
             <span className="nv-hero-title">{t('home.hero')}</span>
+            <span className="nv-tagline">{t('home.tagline')}</span>
             {streakN > 0 && <span className="nv-streak"><Icon name="flame" size={15} /> {fmt('streak.line', { n: streakLabel(streakN) })}</span>}
-        </div>
 
-        <div className="nv-sugs">
+            <div className="nv-sugs">
             <button type="button" className="nv-sug" onClick={() => askQuick(t('home.sug.weather'))}>
                 <Icon name="globe" size={16} /><span>{t('home.sug.weather')}</span>
             </button>
@@ -111,9 +116,9 @@ export function Home({ onMenu }: { onMenu: () => void }) {
             <button type="button" className="nv-sug" onClick={() => goTo('/planner')}>
                 <Icon name="calendar" size={16} /><span>{t('home.sug.plan')}</span>
             </button>
-        </div>
+            </div>
 
-        <div className="nv-inputbar">
+            <div className="nv-inputbar">
             <input
                 type="text"
                 className="nv-input"
@@ -125,15 +130,35 @@ export function Home({ onMenu }: { onMenu: () => void }) {
             <button type="button" className="nv-sendbtn" aria-label={t('ask.send')} onClick={() => askQuick(quick)} disabled={quick.trim() === ''}>
                 <Icon name="send" size={18} />
             </button>
+            </div>
         </div>
 
         <div className="nv-section">
-            <span className="nv-section-title">{t('home.shortcuts')}</span>
+            <div className="nv-section-head">
+                <span className="nv-section-title">{t('home.shortcuts')}</span>
+                <span className="nv-section-sub">{t('home.shortcuts.sub')}</span>
+            </div>
             <div className="nv-tiles">
-                <Link to="/quiz" className="nv-tile"><span className="nv-tile-ic"><Icon name="quiz" size={22} /></span><span>{t('nav.quiz')}</span></Link>
-                <Link to="/planner" className="nv-tile"><span className="nv-tile-ic"><Icon name="calendar" size={22} /></span><span>{t('nav.planner')}</span></Link>
-                <Link to="/ask" className="nv-tile"><span className="nv-tile-ic"><Icon name="chat" size={22} /></span><span>{t('nav.ask')}</span></Link>
-                <Link to="/settings" className="nv-tile"><span className="nv-tile-ic"><Icon name="gear" size={22} /></span><span>{t('nav.settings')}</span></Link>
+                <Link to="/quiz" className="nv-tile">
+                    <span className="nv-tile-ic nv-tint-blue"><Icon name="quiz" size={22} /></span>
+                    <span className="nv-tile-tx"><b>{t('nav.quiz')}</b><small>{t('home.tool.quiz.sub')}</small></span>
+                    <span className="nv-tile-arrow"><Icon name="chevL" size={16} /></span>
+                </Link>
+                <Link to="/planner" className="nv-tile">
+                    <span className="nv-tile-ic nv-tint-green"><Icon name="calendar" size={22} /></span>
+                    <span className="nv-tile-tx"><b>{t('nav.planner')}</b><small>{t('home.tool.plan.sub')}</small></span>
+                    <span className="nv-tile-arrow"><Icon name="chevL" size={16} /></span>
+                </Link>
+                <Link to="/ask" className="nv-tile">
+                    <span className="nv-tile-ic nv-tint-purple"><Icon name="chat" size={22} /></span>
+                    <span className="nv-tile-tx"><b>{t('nav.ask')}</b><small>{t('home.tool.ask.sub')}</small></span>
+                    <span className="nv-tile-arrow"><Icon name="chevL" size={16} /></span>
+                </Link>
+                <Link to="/settings" className="nv-tile">
+                    <span className="nv-tile-ic nv-tint-orange"><Icon name="gear" size={22} /></span>
+                    <span className="nv-tile-tx"><b>{t('nav.settings')}</b><small>{t('home.tool.settings.sub')}</small></span>
+                    <span className="nv-tile-arrow"><Icon name="chevL" size={16} /></span>
+                </Link>
             </div>
         </div>
 

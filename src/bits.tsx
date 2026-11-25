@@ -8,7 +8,7 @@ import type { IconName } from './icons';
 import { t } from './i18n';
 import { OrbView } from './orb3d';
 import type { OrbState } from './orb3d';
-import { goTo, startNewChat, useChatSessions } from './util';
+import { goTo, setPendingChat, startNewChat, useChatSessions } from './util';
 
 /* كرة الذكاء الاصطناعي — fallback CSS خفيف (النسخة الأساسية WebGL في orb3d) */
 export function Orb({ size, state = 'idle' }: { size: 'lg' | 'md' | 'sm'; state?: OrbState }) {
@@ -116,7 +116,7 @@ export function Drawer({ open, onClose }: { open: boolean; onClose: () => void }
             <div className="nv-drawer-chats">
                 {chats.length === 0 && <span className="nv-drawer-empty">{t('dr.empty')}</span>}
                 {chats.slice(0, 12).map(c => (
-                    <button key={c.id} type="button" className="nv-drawer-item nv-drawer-chat" onClick={() => { goTo(`/ask?c=${c.id}`); onClose(); }}>
+                    <button key={c.id} type="button" className="nv-drawer-item nv-drawer-chat" onClick={() => { setPendingChat(c.id); onClose(); goTo('/ask'); }}>
                         <span className="nv-drawer-ic"><Icon name="chat" size={17} /></span>
                         <span className="nv-drawer-chat-title">{c.title}</span>
                     </button>

@@ -17,42 +17,81 @@ export function setAiLang(l: AiLang): void {
 interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string }
 
 /* طلب POST مع إعادة محاولة بتأخير متزايد */
+/* الخدمة المجانية بتقيّد الطلبات أحيانًا (HTTP 402/429)، فبنلف على كل المسارات المتاحة:
+   /openai (chat completions) → GET بسيط → POST بسيط — بفواصل متزايدة لحد ما واحد فيهم ينجح */
+async function postOpenAI(messages: ChatMessage[], timeoutMs: number): Promise<string> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const res = await fetch(API_OPENAI, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'openai-fast', messages }),
+            signal: ctrl.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const j = await res.json() as { choices?: { message?: { content?: string } }[] };
+        const txt = (j.choices?.[0]?.message?.content ?? '').trim();
+        if (txt) return txt;
+        throw new Error('empty');
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function postSimple(messages: ChatMessage[], jsonMode: boolean, timeoutMs: number): Promise<string> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, model: 'openai-fast', jsonMode }),
+            signal: ctrl.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const txt = (await res.text()).trim();
+        if (txt) return txt;
+        throw new Error('empty');
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function getSimple(prompt: string, timeoutMs: number): Promise<string> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const res = await fetch(`${API}${encodeURIComponent(prompt.slice(0, 1500))}?model=openai-fast`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const txt = (await res.text()).trim();
+        if (txt) return txt;
+        throw new Error('empty');
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 async function callAI(messages: ChatMessage[], jsonMode: boolean, timeoutMs = 90000): Promise<string> {
+    const sys = messages.find(m => m.role === 'system')?.content ?? '';
+    const lastU = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
+    const getPrompt = `${sys}\n\n${lastU}`;
+    const tries: Array<() => Promise<string>> = [
+        () => postOpenAI(messages, timeoutMs),
+        () => getSimple(getPrompt, timeoutMs),
+        () => postSimple(messages, jsonMode, timeoutMs),
+        () => getSimple(getPrompt, timeoutMs),
+        () => postOpenAI(messages, timeoutMs),
+    ];
+    const waits = [0, 3000, 10000, 25000, 50000];
     let lastErr: unknown;
-    const waits = [0, 1500, 4000];
-    for (let attempt = 0; attempt < waits.length; attempt++) {
+    for (let attempt = 0; attempt < tries.length; attempt++) {
         if (waits[attempt] > 0) await new Promise(r => setTimeout(r, waits[attempt]));
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-            const res = await fetch(API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages, model: 'openai-fast', jsonMode }),
-                signal: ctrl.signal,
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const txt = (await res.text()).trim();
-            if (txt) return txt;
-            throw new Error('empty');
+            return await tries[attempt]();
         } catch (e) {
             lastErr = e;
-        } finally {
-            clearTimeout(timer);
         }
-    }
-    /* failover أخير: endpoint بسيط بـ GET */
-    try {
-        const sys = messages.find(m => m.role === 'system')?.content ?? '';
-        const last = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
-        const prompt = `${sys}\n\n${last}`;
-        const res = await fetch(`${API}${encodeURIComponent(prompt)}?model=openai-fast`);
-        if (res.ok) {
-            const txt = (await res.text()).trim();
-            if (txt) return txt;
-        }
-    } catch (e) {
-        lastErr = e;
     }
     throw lastErr;
 }
