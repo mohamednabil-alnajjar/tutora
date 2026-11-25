@@ -224,7 +224,7 @@ export function Ask({ onMenu }: { onMenu: () => void }) {
                         )}
                     </div>
                 ))}
-                {busy && msgs[msgs.length - 1]?.role !== 'assistant' && <div className="nv-msg nv-msg-ai"><span className="nv-msg-text">{t('ask.thinking')}</span></div>}
+                {busy && msgs[msgs.length - 1]?.role !== 'assistant' && <div className="nv-msg nv-msg-ai nv-typing" aria-label={t('ask.thinking')}><span /><span /><span /></div>}
             </div>
 
             {hasReply && <div className="nv-followups">
