@@ -1249,3 +1249,11 @@ body { font-family: 'Cairo', 'Segoe UI', Tahoma, 'Noto Kufi Arabic', sans-serif;
 
 .k-btn { border-radius: 14px; box-shadow: 0 6px 16px rgba(40, 120, 232, 0.28); }
 .k-btn-secondary { box-shadow: none; }
+
+/* ---------- v16.1: النسخ الاحتياطي والاستعادة (منقولة من مسودة V2.1) ---------- */
+.nv-backup { display: grid; gap: 12px; }
+.nv-backup > p { margin: 0; color: var(--nv-ink2); line-height: 1.85; }
+.nv-import-label { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.nv-import-label input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.nv-backup .zak-actions { flex-wrap: wrap; }
+@media (max-width: 460px) { .nv-backup .zak-actions > * { flex: 1 1 100%; } }

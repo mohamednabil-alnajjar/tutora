@@ -6,6 +6,7 @@ import { fmt, t } from './i18n';
 import type { Lang } from './i18n';
 import { ROADMAP_TEXT } from './roadmap';
 import { hashPass, useAccount } from './util';
+import { getLang } from './i18n';
 
 interface Props {
     lang: Lang;
@@ -132,6 +133,78 @@ function AccountSection() {
     </div>;
 }
 
+
+function BackupSection() {
+    const [message, setMessage] = useState('');
+    const [busy, setBusy] = useState(false);
+    const isEn = getLang() === 'en';
+    const appKey = (key: string) => /^(nova|tutora|zakarely)\./.test(key);
+
+    const exportData = () => {
+        try {
+            const data: Record<string, unknown> = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key || !appKey(key)) continue;
+                const raw = localStorage.getItem(key);
+                if (raw !== null) data[key] = JSON.parse(raw);
+            }
+            const payload = { app: 'NOVA', version: 2, exportedAt: new Date().toISOString(), data };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nova-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            setMessage(isEn ? 'Backup downloaded successfully.' : 'تم تنزيل النسخة الاحتياطية بنجاح.');
+        } catch {
+            setMessage(isEn ? 'Could not create the backup.' : 'تعذر إنشاء النسخة الاحتياطية.');
+        }
+    };
+
+    const importData = async (file?: File) => {
+        if (!file) return;
+        setBusy(true);
+        setMessage('');
+        try {
+            const parsed: unknown = JSON.parse(await file.text());
+            if (!parsed || typeof parsed !== 'object' || !('app' in parsed) || !('data' in parsed) || (parsed as { app?: unknown }).app !== 'NOVA') {
+                throw new Error('invalid');
+            }
+            const data = (parsed as { data: unknown }).data;
+            if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('invalid');
+            const entries = Object.entries(data as Record<string, unknown>).filter(([key]) => appKey(key));
+            if (!entries.length) throw new Error('empty');
+            if (!window.confirm(isEn ? 'Import this backup? Existing NOVA data will be replaced.' : 'هل تريد استيراد النسخة؟ سيتم استبدال بيانات NOVA الحالية.')) return;
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && appKey(key)) localStorage.removeItem(key);
+            }
+            for (const [key, value] of entries) localStorage.setItem(key, JSON.stringify(value));
+            setMessage(isEn ? 'Backup restored. Reloading…' : 'تم استعادة النسخة. جارٍ إعادة تحميل التطبيق…');
+            window.setTimeout(() => window.location.reload(), 700);
+        } catch {
+            setMessage(isEn ? 'Invalid or unreadable backup file.' : 'ملف النسخة الاحتياطية غير صالح أو لا يمكن قراءته.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return <div className="nv-backup">
+        <p>{isEn ? 'Keep a copy of your study plan, preferences and saved conversations on your device.' : 'احتفظ بنسخة من خطة المذاكرة والإعدادات والمحادثات المحفوظة على جهازك.'}</p>
+        <div className="zak-actions">
+            <FileButton onClick={exportData}>{isEn ? 'Download backup' : 'تنزيل نسخة احتياطية'}</FileButton>
+            <label className="k-btn k-btn-secondary nv-import-label">
+                {busy ? (isEn ? 'Restoring…' : 'جارٍ الاستعادة…') : (isEn ? 'Restore backup' : 'استعادة نسخة')}
+                <input type="file" accept="application/json,.json" disabled={busy} onChange={e => { void importData(e.target.files?.[0]); e.currentTarget.value = ''; }} />
+            </label>
+        </div>
+        {message && <Caption>{message}</Caption>}
+        <Caption>{isEn ? 'Backup files stay on your device. Never share them publicly; they may contain personal notes.' : 'ملف النسخة يُحفظ على جهازك. لا تشاركه علنًا؛ فقد يحتوي على ملاحظاتك ومحادثاتك.'}</Caption>
+    </div>;
+}
+
 export function Settings({ lang, setLang, theme, setTheme }: Props) {
     const [muted, setMuted] = useLocalState<boolean>('zakarely.mute.v1', false);
     return <>
@@ -161,6 +234,9 @@ export function Settings({ lang, setLang, theme, setTheme }: Props) {
         </Group>
         <Group label={t('st.accH')} heading={t('st.accH')}>
             <AccountSection />
+        </Group>
+        <Group label={lang === 'en' ? 'DATA' : 'البيانات'} heading={lang === 'en' ? 'Backup & restore' : 'النسخ الاحتياطي والاستعادة'}>
+            <BackupSection />
         </Group>
         <Group label={t('st.perms')} heading={t('st.privacyH')}>
             <Callout title={t('st.permsT')} tone="note">
