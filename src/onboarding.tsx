@@ -4,9 +4,10 @@
 import React, { useState } from 'react';
 import { Caption, ChoiceRow, FileButton, TextField } from './kit';
 import { askZekrly } from './ai';
-import { Orb } from './bits';
+import { Icon } from './icons';
 import { INTERESTS, t } from './i18n';
 import type { Lang } from './i18n';
+import { OrbView } from './orb3d';
 import { hashPass, useAccount, useInterests } from './util';
 
 interface Props {
@@ -65,14 +66,14 @@ export function Onboarding({ lang, setLang, theme, setTheme, onDone }: Props) {
     };
 
     return <div className="zak-onboard" role="dialog" aria-label={t('ob.welcomeT')}>
-        <span className="zak-stars" aria-hidden="true" />
         <div className="zak-onboard-card">
             <div className="zak-onboard-progress" aria-hidden="true">
                 {Array.from({ length: STEPS }, (_, i) => <span key={i} data-on={i <= step ? '1' : '0'} />)}
             </div>
 
             {step === 0 && <>
-                <Orb size="lg" />
+                <OrbView state="idle" size="lg" />
+                <span className="zak-onboard-brand">NOVA</span>
                 <h1 className="zak-onboard-title">{t('ob.welcomeT')}</h1>
                 <p className="zak-onboard-sub">{t('ob.welcomeS')}</p>
             </>}
@@ -101,10 +102,10 @@ export function Onboarding({ lang, setLang, theme, setTheme, onDone }: Props) {
             {step === 2 && <>
                 <h2 className="zak-onboard-h2">{t('ob.intT')}</h2>
                 <p className="zak-onboard-sub">{t('ob.intS')}</p>
-                <div className="zak-chips">
+                <div className="nv-chips nv-chips-center">
                     {INTERESTS.map(it => (
-                        <button key={it.id} type="button" className="zak-chip" data-on={interests.includes(it.id) ? '1' : '0'} onClick={() => toggleInterest(it.id)}>
-                            <span aria-hidden="true">{it.ic}</span> {t(`int.${it.id}`)}
+                        <button key={it.id} type="button" className="nv-chip" data-on={interests.includes(it.id) ? '1' : '0'} onClick={() => toggleInterest(it.id)}>
+                            <Icon name={it.ic} size={15} /><span>{t(`int.${it.id}`)}</span>
                         </button>
                     ))}
                 </div>
@@ -133,21 +134,23 @@ export function Onboarding({ lang, setLang, theme, setTheme, onDone }: Props) {
             </>}
 
             {step === 4 && <>
-                <Orb size="md" />
+                <OrbView state={busy ? 'thinking' : 'idle'} size="md" />
                 <h2 className="zak-onboard-h2">{t('ob.meetT')}</h2>
                 <p className="zak-onboard-sub">{t('ob.meetS')}</p>
-                {reply !== '' && <div className="zak-msg zak-msg-ai zak-onboard-reply"><span className="zak-msg-text">{reply}</span></div>}
-                <div className="zak-chat-input">
+                {reply !== '' && <div className="nv-msg nv-msg-ai zak-onboard-reply"><span className="nv-msg-text">{reply}</span></div>}
+                <div className="nv-inputbar">
                     <input
                         type="text"
-                        className="zak-chat-text"
+                        className="nv-input"
                         placeholder={t('ob.meetPh')}
                         value={q}
                         onChange={e => setQ(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') askNow(); }}
+                        onKeyDown={e => { if (e.key === 'Enter') void askNow(); }}
                         disabled={busy}
                     />
-                    <FileButton onClick={askNow} disabled={q.trim() === '' || busy}>{busy ? t('ob.thinking') : t('ob.send')}</FileButton>
+                    <button type="button" className="nv-sendbtn" aria-label={t('ob.send')} onClick={() => void askNow()} disabled={q.trim() === '' || busy}>
+                        <Icon name="send" size={18} />
+                    </button>
                 </div>
             </>}
 

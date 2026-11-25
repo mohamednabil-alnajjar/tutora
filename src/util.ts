@@ -130,6 +130,20 @@ let pendingTopic = '';
 export function setPendingTopic(q: string): void { pendingTopic = q; }
 export function consumePendingTopic(): string { const q = pendingTopic; pendingTopic = ''; return q; }
 
+/* ---------- المحادثات المحفوظة ---------- */
+
+export interface ChatMsgT { role: 'user' | 'assistant'; text: string }
+export interface ChatSession { id: string; ts: number; title: string; msgs: ChatMsgT[] }
+
+export function useChatSessions() {
+    return useLocalState<ChatSession[]>('nova.chats.v1', []);
+}
+
+/* طلب فتح محادثة جديدة فاضية في صفحة المساعد */
+let newChatFlag = false;
+export function startNewChat(): void { newChatFlag = true; }
+export function consumeNewChatFlag(): boolean { const f = newChatFlag; newChatFlag = false; return f; }
+
 /* ---------- التنقل ---------- */
 
 export function goTo(path: string): void {

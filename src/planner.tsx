@@ -95,7 +95,7 @@ export function Planner() {
         if (!savedDone.ready) return;
         if (!done[task.id]) {
             markStreak(streak, setStreak, streakSaved.ready);
-            pushActivity(`✅ ${task.subject} — ${kindText(task)}`);
+            pushActivity(`${task.subject} — ${kindText(task)}`);
         }
         setDone({ ...done, [task.id]: !done[task.id] });
     };

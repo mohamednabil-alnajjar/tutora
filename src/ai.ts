@@ -1,9 +1,11 @@
 /* طبقة الذكاء الاصطناعي: بتكلم خدمة ذكاء اصطناعي مجانية مباشرة من المتصفح.
-   مفيش مفاتيح ولا حسابات — الخدمة مجانية ومفتوحة، والملاحظات بتتبعت ليها عشان التوليد بس. */
+   مفيش مفاتيح ولا حسابات — الخدمة مجانية ومفتوحة، والملاحظات بتتبعت ليها عشان التوليد بس.
+   فيه إعادة محاولة تلقائية مع failover، وبث مباشر للردود، وطقس حقيقي من Open-Meteo. */
 
 import type { Question } from './data/types';
 
 const API = 'https://text.pollinations.ai/';
+const API_OPENAI = 'https://text.pollinations.ai/openai';
 
 /* لغة واجهة التطبيق — بتتحدد من إعدادات المستخدم، والمساعد بيرد بنفس اللغة */
 type AiLang = 'ar' | 'en';
@@ -14,10 +16,12 @@ export function setAiLang(l: AiLang): void {
 
 interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string }
 
-async function callAI(messages: ChatMessage[], jsonMode: boolean, timeoutMs = 120000): Promise<string> {
+/* طلب POST مع إعادة محاولة بتأخير متزايد */
+async function callAI(messages: ChatMessage[], jsonMode: boolean, timeoutMs = 90000): Promise<string> {
     let lastErr: unknown;
-    for (let attempt = 0; attempt < 2; attempt++) {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 3500));
+    const waits = [0, 1500, 4000];
+    for (let attempt = 0; attempt < waits.length; attempt++) {
+        if (waits[attempt] > 0) await new Promise(r => setTimeout(r, waits[attempt]));
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
@@ -28,14 +32,72 @@ async function callAI(messages: ChatMessage[], jsonMode: boolean, timeoutMs = 12
                 signal: ctrl.signal,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return (await res.text()).trim();
+            const txt = (await res.text()).trim();
+            if (txt) return txt;
+            throw new Error('empty');
         } catch (e) {
             lastErr = e;
         } finally {
             clearTimeout(timer);
         }
     }
+    /* failover أخير: endpoint بسيط بـ GET */
+    try {
+        const sys = messages.find(m => m.role === 'system')?.content ?? '';
+        const last = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
+        const prompt = `${sys}\n\n${last}`;
+        const res = await fetch(`${API}${encodeURIComponent(prompt)}?model=openai-fast`);
+        if (res.ok) {
+            const txt = (await res.text()).trim();
+            if (txt) return txt;
+        }
+    } catch (e) {
+        lastErr = e;
+    }
     throw lastErr;
+}
+
+/* بث مباشر للرد (SSE) لو متاح، مع رجوع تلقائي للطريقة العادية */
+export async function streamAI(messages: ChatMessage[], onToken: (full: string) => void): Promise<string> {
+    try {
+        const res = await fetch(API_OPENAI, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'openai-fast', messages, stream: true }),
+        });
+        if (!res.ok || !res.body) throw new Error('no-stream');
+        const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+        const dec = new TextDecoder();
+        let acc = '';
+        let buf = '';
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() ?? '';
+            for (const line of lines) {
+                const l = line.trim();
+                if (!l.startsWith('data:')) continue;
+                const data = l.slice(5).trim();
+                if (data === '[DONE]') continue;
+                try {
+                    const j = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] };
+                    const piece = j.choices?.[0]?.delta?.content ?? '';
+                    if (piece) {
+                        acc += piece;
+                        onToken(acc);
+                    }
+                } catch { /* سطر ناقص، تجاهله */ }
+            }
+        }
+        if (acc.trim()) return acc.trim();
+        throw new Error('empty-stream');
+    } catch {
+        const full = await callAI(messages, false, 60000);
+        onToken(full);
+        return full;
+    }
 }
 
 function extractJson(text: string): string {
@@ -117,13 +179,101 @@ export async function generateTopicQuestions(topic: string, count: number): Prom
     return parseQuestionsJson(text);
 }
 
-const ASK_SYSTEM_AR = `أنت "Tutora"، مساعد ذكي ودود لطالب مصري في تانية باكالوريا. جاوب بالعربية المصري البسيط، في ٣-٤ جمل بس، من غير تنسيقات ولا نقط، عشان الإجابة ممكن تتقال بصوت عالي. جاوب على أي سؤال في أي موضوع بشكل مفيد وصادق، ولو السؤال في المنهج اشرح ببساطة من الأول.`;
+const ASK_SYSTEM_AR = `أنت "NOVA"، مساعد ذكي ودود لطالب مصري في تانية باكالوريا. جاوب بالعربية المصري البسيط، في ٣-٤ جمل بس، من غير تنسيقات ولا نقط، عشان الإجابة ممكن تتقال بصوت عالي. جاوب على أي سؤال في أي موضوع بشكل مفيد وصادق، ولو السؤال في المنهج اشرح ببساطة من الأول.`;
 
-const ASK_SYSTEM_EN = `You are "Tutora", a friendly smart assistant for a high-school student. Answer in simple clear English, in 3-4 sentences only, with no formatting or bullet points, because the answer may be spoken aloud. Answer any question on any topic helpfully and honestly, and if the question is about school material explain simply from the basics.`;
+const DEEP_SYSTEM_AR = `أنت "NOVA"، مساعد ذكي لطالب مصري في تانية باكالوريا في وضع التفكير العميق. فكّر خطوة بخطوة وجاوب بالعربية المصري الواضحة بشرح مفصّل ومنظم: المفهوم، مثال عملي، وأخطاء شائعة لو فيه. جاوب على أي سؤال في أي موضوع بعمق وصدق.`;
+
+const DEEP_SYSTEM_EN = `You are "NOVA", a smart assistant for a high-school student in deep-thinking mode. Reason step by step and answer in clear English with a detailed structured explanation: the concept, a practical example, and common mistakes if any. Answer any question on any topic with depth and honesty.`;
+
+const ASK_SYSTEM_EN = `You are "NOVA", a friendly smart assistant for a high-school student. Answer in simple clear English, in 3-4 sentences only, with no formatting or bullet points, because the answer may be spoken aloud. Answer any question on any topic helpfully and honestly, and if the question is about school material explain simply from the basics.`;
 
 export async function askZekrly(history: ChatMessage[]): Promise<string> {
     const sys = uiLang === 'en' ? ASK_SYSTEM_EN : ASK_SYSTEM_AR;
     const text = await callAI([{ role: 'system', content: sys }, ...history.slice(-10)], false, 60000);
+    return text;
+}
+
+export async function askZekrlyStream(history: ChatMessage[], onToken: (full: string) => void, deep = false): Promise<string> {
+    const sys = deep
+        ? (uiLang === 'en' ? DEEP_SYSTEM_EN : DEEP_SYSTEM_AR)
+        : (uiLang === 'en' ? ASK_SYSTEM_EN : ASK_SYSTEM_AR);
+    return streamAI([{ role: 'system', content: sys }, ...history.slice(-10)], onToken);
+}
+
+/* ---------- الطقس الحقيقي (Open-Meteo — مجاني بدون مفتاح) ---------- */
+
+const WX_RE = /(الجو|الطقس|درجة الحرارة|الحراره|الحرارة|برد|حرّ|حر |مطر|أمطار|امطار|weather|temperature|rain)/i;
+
+export function isWeatherQuery(text: string): boolean {
+    return WX_RE.test(text);
+}
+
+const WX_CODES: Record<number, [string, string]> = {
+    0: ['صافي', 'clear sky'], 1: ['صافي غالبًا', 'mostly clear'], 2: ['غائم جزئيًا', 'partly cloudy'], 3: ['غائم', 'overcast'],
+    45: ['ضباب', 'fog'], 48: ['ضباب متجمد', 'icy fog'],
+    51: ['رذاذ خفيف', 'light drizzle'], 53: ['رذاذ', 'drizzle'], 55: ['رذاذ غزير', 'heavy drizzle'],
+    61: ['مطر خفيف', 'light rain'], 63: ['مطر', 'rain'], 65: ['مطر غزير', 'heavy rain'],
+    66: ['مطر متجمد', 'freezing rain'], 67: ['مطر متجمد غزير', 'heavy freezing rain'],
+    71: ['ثلج خفيف', 'light snow'], 73: ['ثلج', 'snow'], 75: ['ثلج غزير', 'heavy snow'], 77: ['حبيبات ثلج', 'snow grains'],
+    80: ['زخات مطر خفيفة', 'light showers'], 81: ['زخات مطر', 'showers'], 82: ['زخات مطر غزيرة', 'heavy showers'],
+    85: ['زخات ثلج', 'snow showers'], 86: ['زخات ثلج غزيرة', 'heavy snow showers'],
+    95: ['عاصفة رعدية', 'thunderstorm'], 96: ['عاصفة رعدية مع برد', 'thunderstorm with hail'], 99: ['عاصفة رعدية قوية مع برد', 'severe thunderstorm with hail'],
+};
+
+interface WxCache { ts: number; place: string; text: string }
+const WX_KEY = 'tutora.weather.v1';
+
+function extractPlace(text: string): string | null {
+    const m = text.match(/(?:في|بـ|ب)\s+([ء-يA-Za-z\s]{3,30})/);
+    if (!m) return null;
+    const p = m[1].trim();
+    return /(النهاردة|النهارده|دلوقتي|اليوم)/.test(p) ? null : p;
+}
+
+async function geocode(name: string): Promise<{ lat: number; lon: number; label: string } | null> {
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=ar&format=json`);
+    if (!res.ok) return null;
+    const j = await res.json() as { results?: { latitude: number; longitude: number; name: string; country?: string }[] };
+    const r = j.results?.[0];
+    return r ? { lat: r.latitude, lon: r.longitude, label: r.name } : null;
+}
+
+export async function answerWeather(question: string): Promise<string> {
+    const offlineMsg = uiLang === 'en' ? 'Weather needs internet, and it looks offline right now. Try again when you are connected.' : 'الطقس محتاج نت، وشكله مقطوع دلوقتي. جرب تاني لما النت يرجع.';
+    try {
+        if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) return offlineMsg;
+    } catch { /* ignore */ }
+
+    const place = extractPlace(question);
+    const cacheKey = `${WX_KEY}:${place ?? 'default'}`;
+    try {
+        const raw = window.localStorage.getItem(cacheKey);
+        if (raw) {
+            const c = JSON.parse(raw) as WxCache;
+            if (Date.now() - c.ts < 10 * 60 * 1000) return c.text;
+        }
+    } catch { /* ignore */ }
+
+    let geo = place ? await geocode(place) : null;
+    if (!geo && !place) geo = await geocode(uiLang === 'en' ? 'Timayy al Imdid' : 'تمي الامديد');
+    if (!geo) geo = await geocode(uiLang === 'en' ? 'Mansoura' : 'المنصورة');
+    if (!geo) geo = { lat: 30.0444, lon: 31.2357, label: uiLang === 'en' ? 'Cairo' : 'القاهرة' };
+
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=Africa%2FCairo`);
+    if (!res.ok) throw new Error('wx-http');
+    const j = await res.json() as { current?: { temperature_2m: number; apparent_temperature: number; weather_code: number; wind_speed_10m: number } };
+    const c = j.current;
+    if (!c) throw new Error('wx-shape');
+    const [descAr, descEn] = WX_CODES[c.weather_code] ?? ['جو متقلب', 'mixed weather'];
+    const temp = Math.round(c.temperature_2m);
+    const feels = Math.round(c.apparent_temperature);
+    const wind = Math.round(c.wind_speed_10m);
+    const text = uiLang === 'en'
+        ? `Weather in ${geo.label} now: ${descEn}, temperature ${temp}°C, feels like ${feels}°C, wind ${wind} km/h.`
+        : `الجو في ${geo.label} دلوقتي: ${descAr}، درجة الحرارة ${temp}° والإحساس بيها ${feels}°، والرياح ${wind} كم/ساعة.`;
+    try {
+        window.localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), place: geo.label, text } satisfies WxCache));
+    } catch { /* ignore */ }
     return text;
 }
 
@@ -162,6 +312,70 @@ export function stopSpeaking(): void {
 
 export const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
+/* ---------- موسيقى خلفية هادية (متولدة برمجيًا — بدون ملفات وبدون حقوق) ---------- */
+
+let ambientNodes: { stop: () => void } | null = null;
+
+/* باد ناعم جدًا: ٣ نغمات بطيئة بتتعاقب بهدوء، صوت واطي خالص */
+export function startAmbient(): void {
+    try {
+        if (ambientNodes) return;
+        const w = window as unknown as Record<string, unknown>;
+        const AC = (w.AudioContext ?? w.webkitAudioContext) as (new () => AudioContext) | undefined;
+        if (!AC) return;
+        audioCtx = audioCtx ?? new AC();
+        const ctx = audioCtx;
+        if (ctx.state === 'suspended') ctx.resume().catch(() => undefined);
+        const master = ctx.createGain();
+        master.gain.value = 0.035;
+        master.connect(ctx.destination);
+        const chords = [
+            [261.63, 329.63, 392.00],
+            [220.00, 261.63, 329.63],
+            [174.61, 220.00, 261.63],
+            [196.00, 246.94, 293.66],
+        ];
+        let chordIdx = 0;
+        let stopped = false;
+        const timers: number[] = [];
+        const playChord = () => {
+            if (stopped) return;
+            const notes = chords[chordIdx % chords.length];
+            chordIdx++;
+            notes.forEach((f, i) => {
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.value = f * 0.5;
+                const t = ctx.currentTime + i * 0.6;
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.16, t + 2.2);
+                g.gain.linearRampToValueAtTime(0.0001, t + 7.5);
+                o.connect(g);
+                g.connect(master);
+                o.start(t);
+                o.stop(t + 8);
+            });
+            timers.push(window.setTimeout(playChord, 6000));
+        };
+        playChord();
+        ambientNodes = {
+            stop: () => {
+                stopped = true;
+                timers.forEach(clearTimeout);
+                try { master.disconnect(); } catch { /* ignore */ }
+            },
+        };
+    } catch { /* تجاهل */ }
+}
+
+export function stopAmbient(): void {
+    try {
+        ambientNodes?.stop();
+    } catch { /* ignore */ }
+    ambientNodes = null;
+}
+
 /* ---------- نغمة البداية (مهددة هادية، متولدة برمجيًا — مفيش حقوق موسيقى) ---------- */
 
 let audioCtx: AudioContext | null = null;
@@ -199,6 +413,7 @@ export interface SpeechRecog {
     lang: string;
     interimResults: boolean;
     maxAlternatives: number;
+    continuous: boolean;
     onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
     onerror: (() => void) | null;
     onend: (() => void) | null;
@@ -212,5 +427,6 @@ export function createRecognizer(): SpeechRecog | null {
     r.lang = uiLang === 'en' ? 'en-US' : 'ar-EG';
     r.interimResults = false;
     r.maxAlternatives = 1;
+    r.continuous = false;
     return r;
 }

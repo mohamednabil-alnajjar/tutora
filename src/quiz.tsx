@@ -31,7 +31,7 @@ export function QuizRun({ unit, onExit }: { unit: Unit; onExit: () => void }) {
         if (idx + 1 >= total) {
             setFinished(true);
             markStreak(streak, setStreak, streakSaved.ready);
-            pushActivity(`📝 ${unit.title} — ${pct}%`);
+            pushActivity(`${unit.title} — ${pct}%`);
             const prev = scores[unit.id];
             if (saved.ready) {
                 setScores({

@@ -1,10 +1,12 @@
-/* الصفحة الرئيسية الذكية المخصصة: تحية بالاسم حسب الوقت، كرة المساعد، سؤال سريع،
-   اختصارات الأدوات، مواضيع مقترحة من الاهتمامات، آخر نشاط، وتنبيهات حقيقية من بيانات الجهاز */
+/* الصفحة الرئيسية: ستايل مودرن نضيف — شريط علوي، كرة NOVA في النص، تحية بالاسم،
+   اقتراحات جاهزة، شريط كتابة سريع، أدوات، وآخر نشاط — مع خلفية حية هادئة */
 
 import React, { useEffect, useState } from 'react';
 import { Caption, Link } from './kit';
-import { Orb } from './bits';
+import { LiveBg } from './bits';
+import { Icon } from './icons';
 import { INTERESTS, fmt, t } from './i18n';
+import { OrbView } from './orb3d';
 import { buildPlan } from './planner';
 import type { Subject } from './planner';
 import {
@@ -19,7 +21,7 @@ function greetingKey(): string {
     return 'home.night';
 }
 
-export function Home() {
+export function Home({ onMenu }: { onMenu: () => void }) {
     const [account] = useAccount();
     const [streakData] = useStreak();
     const [interests] = useInterests();
@@ -46,10 +48,10 @@ export function Home() {
         }
     }, []);
 
-    const askQuick = () => {
-        const text = quick.trim();
-        if (!text) return;
-        setPendingAsk(text);
+    const askQuick = (text: string) => {
+        const q = text.trim();
+        if (!q) return;
+        setPendingAsk(q);
         goTo('/ask');
     };
 
@@ -64,85 +66,99 @@ export function Home() {
     if (streakN > 0 && !studiedToday) notices.push(t('home.streakRisk'));
     if (pendingToday > 0) notices.push(fmt('home.tasksToday', { n: pendingToday }));
 
+    const firstInterest = INTERESTS.find(it => interests.includes(it.id));
+
     return <>
-        <div className="zak-hero zak-hero-space">
-            <div className="zak-hero-top">
-                <div className="zak-hero-hi-wrap">
-                    <span className="zak-hero-hi">{fmt('home.hiName', { g: t(greetingKey()), n: name })}</span>
-                    <span className="zak-hero-sub">{t('home.ready')}</span>
-                    {streakN > 0 && <span className="zak-streak">{fmt('streak.line', { n: streakLabel(streakN) })}</span>}
-                </div>
-                <button type="button" className="zak-bell" aria-label={t('home.notifs')} onClick={() => setShowNotifs(!showNotifs)}>
-                    🔔{notices.length > 0 && <span className="zak-bell-dot">{notices.length}</span>}
-                </button>
-            </div>
+        <div className="nv-topbar">
+            <button type="button" className="nv-iconbtn" aria-label={t('nav.label')} onClick={onMenu}><Icon name="menu" size={20} /></button>
+            <span className="nv-wordmark">NOVA</span>
+            <button type="button" className="nv-iconbtn nv-bell" aria-label={t('home.notifs')} onClick={() => setShowNotifs(!showNotifs)}>
+                <Icon name="bell" size={20} />
+                {notices.length > 0 && <span className="nv-bell-dot">{notices.length}</span>}
+            </button>
+        </div>
 
-            {showNotifs && <div className="zak-notif-panel" role="status">
-                <span className="zak-notif-title">{t('home.notifs')}</span>
-                {notices.length === 0 && <Caption>{t('home.noNotifs')}</Caption>}
-                {notices.map((n, i) => <span key={i} className="zak-notif-item">{n}</span>)}
-                {notifPerm === 'default' && <button type="button" className="zak-onboard-link" onClick={enableNotifs}>{t('home.enableNotifs')}</button>}
-                {notifPerm === 'granted' && <Caption>{t('home.notifOn')}</Caption>}
-                {notifPerm === 'denied' && <Caption>{t('home.notifOff')}</Caption>}
-                {notifPerm === 'unsupported' && <Caption>{t('home.notifUnsupported')}</Caption>}
-            </div>}
+        {showNotifs && <div className="nv-notif-panel" role="status">
+            <span className="nv-notif-title">{t('home.notifs')}</span>
+            {notices.length === 0 && <Caption>{t('home.noNotifs')}</Caption>}
+            {notices.map((n, i) => <span key={i} className="nv-notif-item">{n}</span>)}
+            {notifPerm === 'default' && <button type="button" className="nv-textbtn" onClick={enableNotifs}>{t('home.enableNotifs')}</button>}
+            {notifPerm === 'granted' && <Caption>{t('home.notifOn')}</Caption>}
+            {notifPerm === 'denied' && <Caption>{t('home.notifOff')}</Caption>}
+            {notifPerm === 'unsupported' && <Caption>{t('home.notifUnsupported')}</Caption>}
+        </div>}
 
-            <Link to="/ask" className="zak-orb-card">
-                <Orb size="md" />
-                <span className="zak-orb-card-text">
-                    <b>{t('home.orbTitle')}</b>
-                    <span>{t('home.orbSub')}</span>
-                </span>
+        <div className="nv-hero">
+            <LiveBg />
+            <Link to="/ask" className="nv-hero-orb" aria-label={t('home.orbTitle')}>
+                <OrbView state="idle" size="md" />
             </Link>
+            <span className="nv-hero-hi">{fmt('home.hiName', { g: t(greetingKey()), n: name })}</span>
+            <span className="nv-hero-title">{t('home.hero')}</span>
+            {streakN > 0 && <span className="nv-streak"><Icon name="flame" size={15} /> {fmt('streak.line', { n: streakLabel(streakN) })}</span>}
+        </div>
 
-            <div className="zak-quick-ask">
-                <input
-                    type="text"
-                    className="zak-chat-text"
-                    placeholder={t('home.askPh')}
-                    value={quick}
-                    onChange={e => setQuick(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') askQuick(); }}
-                />
-                <button type="button" className="zak-quick-go" onClick={askQuick} disabled={quick.trim() === ''}>{t('home.askGo')}</button>
+        <div className="nv-sugs">
+            <button type="button" className="nv-sug" onClick={() => askQuick(t('home.sug.weather'))}>
+                <Icon name="globe" size={16} /><span>{t('home.sug.weather')}</span>
+            </button>
+            <button type="button" className="nv-sug" onClick={() => askQuick(t('home.sug.lesson'))}>
+                <Icon name="spark" size={16} /><span>{t('home.sug.lesson')}</span>
+            </button>
+            {firstInterest && <button type="button" className="nv-sug" onClick={() => { setPendingTopic(t(`topic.${firstInterest.id}`)); goTo('/quiz'); }}>
+                <Icon name="quiz" size={16} /><span>{t('home.sug.quiz')}</span>
+            </button>}
+            <button type="button" className="nv-sug" onClick={() => goTo('/planner')}>
+                <Icon name="calendar" size={16} /><span>{t('home.sug.plan')}</span>
+            </button>
+        </div>
+
+        <div className="nv-inputbar">
+            <input
+                type="text"
+                className="nv-input"
+                placeholder={t('home.askPh')}
+                value={quick}
+                onChange={e => setQuick(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') askQuick(quick); }}
+            />
+            <button type="button" className="nv-sendbtn" aria-label={t('ask.send')} onClick={() => askQuick(quick)} disabled={quick.trim() === ''}>
+                <Icon name="send" size={18} />
+            </button>
+        </div>
+
+        <div className="nv-section">
+            <span className="nv-section-title">{t('home.shortcuts')}</span>
+            <div className="nv-tiles">
+                <Link to="/quiz" className="nv-tile"><span className="nv-tile-ic"><Icon name="quiz" size={22} /></span><span>{t('nav.quiz')}</span></Link>
+                <Link to="/planner" className="nv-tile"><span className="nv-tile-ic"><Icon name="calendar" size={22} /></span><span>{t('nav.planner')}</span></Link>
+                <Link to="/ask" className="nv-tile"><span className="nv-tile-ic"><Icon name="chat" size={22} /></span><span>{t('nav.ask')}</span></Link>
+                <Link to="/settings" className="nv-tile"><span className="nv-tile-ic"><Icon name="gear" size={22} /></span><span>{t('nav.settings')}</span></Link>
             </div>
         </div>
 
-        <div className="zak-section">
-            <span className="zak-section-title">{t('home.shortcuts')}</span>
-            <div className="zak-tiles">
-                <Link to="/quiz" className="zak-tile"><span className="zak-tile-ic">📝</span><span>{t('nav.quiz')}</span></Link>
-                <Link to="/planner" className="zak-tile"><span className="zak-tile-ic">🗓️</span><span>{t('nav.planner')}</span></Link>
-                <Link to="/ask" className="zak-tile"><span className="zak-tile-ic">💬</span><span>{t('nav.ask')} Tutora</span></Link>
-                <Link to="/settings" className="zak-tile"><span className="zak-tile-ic">⚙️</span><span>{t('nav.settings')}</span></Link>
-            </div>
-        </div>
-
-        {interests.length > 0 && <div className="zak-section">
-            <span className="zak-section-title">{t('home.suggested')}</span>
-            <div className="zak-chips">
+        {interests.length > 0 && <div className="nv-section">
+            <span className="nv-section-title">{t('home.suggested')}</span>
+            <div className="nv-chips">
                 {INTERESTS.filter(it => interests.includes(it.id)).map(it => (
-                    <button key={it.id} type="button" className="zak-chip" data-on="1" onClick={() => { setPendingTopic(t(`topic.${it.id}`)); goTo('/quiz'); }}>
-                        <span aria-hidden="true">{it.ic}</span> {t(`topic.${it.id}`)}
+                    <button key={it.id} type="button" className="nv-chip" onClick={() => { setPendingTopic(t(`topic.${it.id}`)); goTo('/quiz'); }}>
+                        <Icon name={it.ic} size={15} /><span>{t(`topic.${it.id}`)}</span>
                     </button>
                 ))}
             </div>
         </div>}
 
-        <div className="zak-section">
-            <span className="zak-section-title">{t('home.recent')}</span>
+        <div className="nv-section">
+            <span className="nv-section-title">{t('home.recent')}</span>
             {activity.length === 0 && <Caption>{t('home.noRecent')}</Caption>}
             {activity.slice(0, 3).map((a, i) => (
-                <div key={i} className="zak-activity">
-                    <span className="zak-activity-dot" aria-hidden="true" />
+                <div key={i} className="nv-activity">
+                    <span className="nv-activity-dot" aria-hidden="true" />
                     <span>{a.text}</span>
                 </div>
             ))}
         </div>
 
-        <div className="zak-section zak-maker-line">
-            <Caption>{t('home.maker')}</Caption>
-            <Caption>{formatDate(today)}</Caption>
-        </div>
+        <div className="nv-date-line"><Caption>{formatDate(today)}</Caption></div>
     </>;
 }

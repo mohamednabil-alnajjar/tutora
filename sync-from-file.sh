@@ -3,7 +3,7 @@
 set -e
 cd /downloads/zakarely-pwa
 
-for f in App.tsx ai.ts ask.tsx bits.tsx home.tsx i18n.ts onboarding.tsx planner.tsx quiz.tsx roadmap.ts settings.tsx style.css util.ts; do
+for f in App.tsx ai.ts ask.tsx bits.tsx home.tsx i18n.ts icons.tsx onboarding.tsx orb3d.tsx planner.tsx quiz.tsx roadmap.ts settings.tsx style.css util.ts; do
     cp "/downloads/zakarely/src/$f" "src/$f"
 done
 rm -rf src/data && cp -r /downloads/zakarely/src/data src/data
