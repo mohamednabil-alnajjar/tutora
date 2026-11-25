@@ -73,7 +73,7 @@ export function App() {
     /* أول تشغيل: لو الحساب اتعمل من الأونبوردنج قبل كده، ميعادش يظهر */
     const needsOnboarding = !onboard.done;
 
-    return <FileCard lang={getLang()} dir={getLang() === 'ar' ? 'rtl' : 'ltr'}>
+    return <FileCard key={lang} lang={getLang()} dir={getLang() === 'ar' ? 'rtl' : 'ltr'}>
         {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
         {splashDone && needsOnboarding && (
             <Onboarding
