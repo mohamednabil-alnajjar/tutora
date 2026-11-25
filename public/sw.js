@@ -1,7 +1,7 @@
 /* NOVA service worker: network-first للصفحات (عشان التحديثات توصل فورًا)، cache-first للأصول الثابتة.
    طلبات الـ AI دايمًا نت مباشرة. */
 
-const CACHE = 'nova-v16-1';
+const CACHE = 'nova-v16-2';
 const SHELL = ['./manifest.webmanifest', './icon-192.png', './icon-512.png', './fonts/cairo.css'];
 
 self.addEventListener('install', (event) => {
